@@ -1,0 +1,103 @@
+plugins {
+    id 'groovy'
+    id 'java'
+    id "com.github.erdi.webdriver-binaries" version "2.2"
+    id "com.github.erdi.idea-base" version "2.2"    
+}
+
+ext {
+    // The drivers we want to use
+    drivers = ["firefox", "chrome", "chromeHeadless"]
+
+    ext {
+        gebVersion = '3.4'
+        seleniumVersion = '3.14.0'
+        chromeDriverVersion = '79.0.3945.36'
+        geckoDriverVersion = '0.26.0'
+    }
+}
+
+group 'westmount'
+version '0.1'
+
+sourceCompatibility = 1.8
+
+sourceSets {
+    main {
+        java {
+            srcDir 'src'
+            exclude 'groovy/myairticket/*.java'
+        }
+    }
+}
+
+jar {
+    manifest {
+        attributes(
+                //'Class-Path': configurations.compile.collect { it.getName() }.join(' '),
+                'Main-Class': 'myairticket.Main', 
+                "Build-Time": new Date().format("yyyy-MM-dd HH:mm:ss"),
+                "Build-Jdk": System.getProperty("java.version"),
+                "Built-By": System.getProperty("user.name"),
+                "Created-By": "Gradle"
+        )
+    }
+    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    //compile group: 'org.codehaus.groovy', name: 'groovy-all', version: '2.5.6', ext: 'pom'
+    compile 'org.codehaus.groovy:groovy-all:2.5.6'
+    //testCompile group: 'junit', name: 'junit', version: '4.12'
+    //compile "com.oracle.ojdbc:ojdbc8:19.3.0.0"
+    compile group: 'org.codehaus.groovy', name: 'groovy-cli-picocli', version: '2.5.8'
+    //compile group: 'org.codehaus.groovy.modules.http-builder', name: 'http-builder', version: '0.7.1'
+    
+    // https://mvnrepository.com/artifact/net.sourceforge.tess4j/tess4j
+    compile group: 'net.sourceforge.tess4j', name: 'tess4j', version: '4.5.1'
+    
+    compile "org.gebish:geb-core:2.3.1"
+    //compile group: 'org.gebish', name: 'geb-core', version: '3.3'
+
+    //compile "org.seleniumhq.selenium:selenium-firefox-driver:3.141.59"
+    compile group: 'org.seleniumhq.selenium', name: 'selenium-chrome-driver', version: '3.141.59'
+    compile "org.seleniumhq.selenium:selenium-support:3.141.59"
+    compile group: 'io.github.bonigarcia', name: 'webdrivermanager', version: '4.0.0'
+
+    //compile group: 'org.seleniumhq.selenium', name: 'selenium-java', version: '3.141.59'
+    //compile group: 'org.seleniumhq.selenium', name: 'selenium-chrome-driver', version: '3.141.59'
+
+//    compile group: 'org.codehaus.groovy', name: 'http-builder', version='0.7'
+
+    //compile 'com.oracle.ojdbc:ojdbc10:19.3.0.0'
+
+    //runtime files('/Users/101232212/workspace/gbc-apmt/timetabler/ojdbc6.jar')
+
+    //testImplementation 'org.junit.jupiter:junit-jupiter-api:5.3.1'
+    //testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.3.1'
+
+}
+
+webdriverBinaries {
+    chromedriver {
+        version = chromeDriverVersion
+        fallbackTo32Bit = true
+    }
+    geckodriver geckoDriverVersion
+}
+
+drivers.each { driver ->
+    task "${driver}Test"(type: Test) {
+        group JavaBasePlugin.VERIFICATION_GROUP
+
+        outputs.upToDateWhen { false }  // Always run tests
+
+        systemProperty "geb.build.reportsDir", reporting.file("geb/$name")
+        systemProperty "geb.env", driver
+    }
+}
